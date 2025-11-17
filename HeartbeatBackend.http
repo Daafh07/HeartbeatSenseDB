@@ -1,0 +1,6 @@
+@HeartbeatBackend_HostAddress = http://localhost:5069
+
+GET {{HeartbeatBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
