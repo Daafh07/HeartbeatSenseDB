@@ -53,3 +53,4 @@
 /Users/daafheijnekamp/HeartbeatSenseDB/obj/Debug/net9.0/HeartbeatBackend.pdb
 /Users/daafheijnekamp/HeartbeatSenseDB/obj/Debug/net9.0/HeartbeatBackend.genruntimeconfig.cache
 /Users/daafheijnekamp/HeartbeatSenseDB/obj/Debug/net9.0/ref/HeartbeatBackend.dll
+/Users/daafheijnekamp/HeartbeatSenseDB/obj/Debug/net9.0/HeartbeatBackend.sourcelink.json
