@@ -9,6 +9,9 @@ DotNetEnv.Env.Load();
 
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
 var key = Encoding.ASCII.GetBytes(jwtSecret);
+var allowedOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
+    ?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? Array.Empty<string>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -27,9 +30,27 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        if (allowedOrigins.Length == 0)
+        {
+            policy.AllowAnyOrigin();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
+
+        policy.AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
