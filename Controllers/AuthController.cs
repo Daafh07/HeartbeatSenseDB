@@ -56,39 +56,44 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] User loginData)
+public async Task<IActionResult> Login([FromBody] LoginRequest loginData)
+{
+    if (!ModelState.IsValid)
     {
-        var response = await _client.From<User>()
-            .Where(u => u.Email == loginData.Email)
-            .Get();
-
-        var user = response.Models.FirstOrDefault();
-
-        if (user == null)
-            return Unauthorized("Invalid credentials.");
-
-        if (!BCrypt.Net.BCrypt.Verify(loginData.Password, user.Password))
-            return Unauthorized("Invalid credentials.");
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtSecret);
-
-        var tokenDescriptor = new SecurityTokenDescriptor
+        return BadRequest(ModelState);
+    }
+ 
+    var response = await _client.From<User>()
+        .Where(u => u.Email == loginData.Email)
+        .Get();
+ 
+    var user = response.Models.FirstOrDefault();
+ 
+    if (user == null)
+        return Unauthorized(new { message = "Invalid credentials." });
+ 
+    if (!BCrypt.Net.BCrypt.Verify(loginData.Password, user.Password))
+        return Unauthorized(new { message = "Invalid credentials." });
+ 
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.ASCII.GetBytes(_jwtSecret);
+ 
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[]
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim("id", user.Id.ToString()),
-                new Claim("email", user.Email)
-            }),
-            Expires = DateTime.UtcNow.AddHours(12),
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        var jwt = tokenHandler.WriteToken(token);
-
-        return Ok(new { token = jwt });
+            new Claim("id", user.Id.ToString()),
+            new Claim("email", user.Email)
+        }),
+        Expires = DateTime.UtcNow.AddHours(12),
+        SigningCredentials = new SigningCredentials(
+            new SymmetricSecurityKey(key),
+            SecurityAlgorithms.HmacSha256Signature)
+    };
+ 
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    var jwt = tokenHandler.WriteToken(token);
+ 
+    return Ok(new { token = jwt });
     }
 }
