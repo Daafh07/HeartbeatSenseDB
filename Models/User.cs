@@ -1,26 +1,43 @@
 using Supabase.Postgrest.Models;
+
 using Supabase.Postgrest.Attributes;
-
+ 
 namespace HeartbeatBackend.Models;
-
+ 
 [Table("users")]
+
 public class User : BaseModel
+
 {
-    [PrimaryKey("id")]
+
+    [PrimaryKey("id", false)] // false = geen auto-increment, bv uuid
+
+    [Column("id")]
+
     public Guid Id { get; set; }
-
+ 
     [Column("first_name")]
-    public string FirstName { get; set; }
 
+    public string FirstName { get; set; } = default!;
+ 
     [Column("last_name")]
-    public string LastName { get; set; }
 
+    public string LastName { get; set; } = default!;
+ 
     [Column("email")]
-    public string Email { get; set; }
+
+    public string Email { get; set; } = default!;
+ 
+    // Let op: kolomnaam moet 100% matchen met Supabase
 
     [Column("password")]
-    public string Password { get; set; }
 
+    public string Password { get; set; } = default!;
+ 
     [Column("created_at")]
+
     public DateTime CreatedAt { get; set; }
+
 }
+
+ 
