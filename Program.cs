@@ -1,26 +1,27 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-
 using Microsoft.IdentityModel.Tokens;
-
+using Supabase;
 using System.Text;
- 
-var builder = WebApplication.CreateBuilder(args);
  
 // Load env (.env for local dev; on Render the usual env vars still work)
 
 DotNetEnv.Env.Load();
- 
-// --- JWT setup ---
 
-var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+var builder = WebApplication.CreateBuilder(args);
 
-if (string.IsNullOrWhiteSpace(jwtSecret))
-
+string RequireEnv(string key)
 {
-
-    throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
-
+    var value = Environment.GetEnvironmentVariable(key);
+    if (string.IsNullOrWhiteSpace(value))
+        throw new InvalidOperationException($"{key} environment variable is not set.");
+    return value;
 }
+ 
+// --- JWT & Supabase setup ---
+
+var jwtSecret = RequireEnv("JWT_SECRET");
+var supabaseUrl = RequireEnv("SUPABASE_URL");
+var supabaseKey = RequireEnv("SUPABASE_KEY");
  
 var key = Encoding.ASCII.GetBytes(jwtSecret);
  
@@ -70,7 +71,18 @@ else
  
 // --- Services ---
 
-builder.Services.AddControllers();
+builder.Services
+    .AddSingleton<Client>(_ =>
+    {
+        var supabaseOptions = new SupabaseOptions
+        {
+            AutoRefreshToken = false,
+            AutoConnectRealtime = false
+        };
+
+        return new Client(supabaseUrl, supabaseKey, supabaseOptions);
+    })
+    .AddControllers();
  
 builder.Services.AddAuthentication(options =>
 

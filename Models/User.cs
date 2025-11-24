@@ -10,7 +10,7 @@ public class User : BaseModel
 
 {
 
-    [PrimaryKey("id", false)] // false = geen auto-increment, bv uuid
+    [PrimaryKey("id", false)]
 
     [Column("id")]
 
@@ -28,7 +28,6 @@ public class User : BaseModel
 
     public string Email { get; set; } = default!;
  
-    // Let op: kolomnaam moet 100% matchen met Supabase
 
     [Column("password")]
 

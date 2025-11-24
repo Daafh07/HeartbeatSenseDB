@@ -1,9 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using Supabase;
 using HeartbeatBackend.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Supabase;
+using Supabase.Postgrest.Exceptions;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Security.Claims;
 using System.Text;
  
 namespace HeartbeatBackend.Controllers;
@@ -14,22 +16,13 @@ public class AuthController : ControllerBase
 {
     private readonly Client _client;
     private readonly string _jwtSecret;
+    private readonly ILogger<AuthController> _logger;
  
-    public AuthController(IConfiguration config)
+    public AuthController(Client client, IConfiguration config, ILogger<AuthController> logger)
     {
-        DotNetEnv.Env.Load();
- 
-        var url = Environment.GetEnvironmentVariable("SUPABASE_URL");
-        var key = Environment.GetEnvironmentVariable("SUPABASE_KEY");
-        _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "";
- 
-        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(key))
-            throw new InvalidOperationException("SUPABASE_URL or SUPABASE_KEY is not set.");
- 
-        if (string.IsNullOrWhiteSpace(_jwtSecret))
-            throw new InvalidOperationException("JWT_SECRET is not set.");
- 
-        _client = new Client(url, key);
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+        _logger = logger;
+        _jwtSecret = config["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not set.");
     }
  
     [HttpPost("register")]
@@ -38,29 +31,39 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
  
-        // Check if user exists
-        var existing = await _client
-            .From<User>()
-            .Where(u => u.Email == userInfo.Email)
-            .Get();
- 
-        if (existing.Models.Any())
-            return BadRequest(new { message = "Email already exists." });
- 
-        // Create new user with hashed password
-        var newUser = new User
+        try
         {
-            Id = Guid.NewGuid(),
-            FirstName = userInfo.FirstName,
-            LastName = userInfo.LastName,
-            Email = userInfo.Email,
-            Password = BCrypt.Net.BCrypt.HashPassword(userInfo.Password),
-            CreatedAt = DateTime.UtcNow
-        };
+            var existing = await _client
+                .From<User>()
+                .Where(u => u.Email == userInfo.Email)
+                .Get();
  
-        await _client.From<User>().Insert(newUser);
+            if (existing.Models.Any())
+                return BadRequest(new { message = "Email already exists." });
  
-        return Ok(new { message = "User created successfully." });
+            var newUser = new User
+            {
+                Id = Guid.NewGuid(),
+                FirstName = userInfo.FirstName,
+                LastName = userInfo.LastName,
+                Email = userInfo.Email,
+                Password = BCrypt.Net.BCrypt.HashPassword(userInfo.Password),
+                CreatedAt = DateTime.UtcNow
+            };
+ 
+            await _client.From<User>().Insert(newUser);
+ 
+            return Ok(new { message = "User created successfully." });
+        }
+        catch (PostgrestException ex)
+        {
+            return HandleSupabaseException(ex, "Unable to register the user.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while registering user {Email}", userInfo.Email);
+            return StatusCode(500, new { message = "Unexpected error while registering user." });
+        }
     }
  
     [HttpPost("login")]
@@ -69,38 +72,65 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
  
-        var response = await _client
-            .From<User>()
-            .Where(u => u.Email == loginData.Email)
-            .Get();
- 
-        var user = response.Models.FirstOrDefault();
- 
-        if (user == null)
-            return Unauthorized(new { message = "Invalid credentials." });
- 
-        if (!BCrypt.Net.BCrypt.Verify(loginData.Password, user.Password))
-            return Unauthorized(new { message = "Invalid credentials." });
- 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtSecret);
- 
-        var tokenDescriptor = new SecurityTokenDescriptor
+        try
         {
-            Subject = new ClaimsIdentity(new[]
+            var response = await _client
+                .From<User>()
+                .Where(u => u.Email == loginData.Email)
+                .Get();
+ 
+            var user = response.Models.FirstOrDefault();
+ 
+            if (user == null)
+                return Unauthorized(new { message = "Invalid credentials." });
+ 
+            if (string.IsNullOrWhiteSpace(user.Password) ||
+                !BCrypt.Net.BCrypt.Verify(loginData.Password, user.Password))
+                return Unauthorized(new { message = "Invalid credentials." });
+ 
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSecret);
+ 
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                new Claim("id", user.Id.ToString()),
-                new Claim("email", user.Email)
-            }),
-            Expires = DateTime.UtcNow.AddHours(12),
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature)
-        };
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("id", user.Id.ToString()),
+                    new Claim("email", user.Email)
+                }),
+                Expires = DateTime.UtcNow.AddHours(12),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
+            };
  
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        var jwt = tokenHandler.WriteToken(token);
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwt = tokenHandler.WriteToken(token);
  
-        return Ok(new { token = jwt });
+            return Ok(new { token = jwt });
+        }
+        catch (PostgrestException ex)
+        {
+            return HandleSupabaseException(ex, "Unable to fetch user information.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while logging in user {Email}", loginData.Email);
+            return StatusCode(500, new { message = "Unexpected error while logging in." });
+        }
+    }
+
+    private IActionResult HandleSupabaseException(PostgrestException exception, string fallbackMessage)
+    {
+        var statusCode = exception.StatusCode > 0
+            ? exception.StatusCode
+            : (int)HttpStatusCode.InternalServerError;
+        var message = !string.IsNullOrWhiteSpace(exception.Content)
+            ? exception.Content
+            : fallbackMessage;
+
+        _logger.LogError(exception, "Supabase/PostgREST error: {Message}", message);
+
+        return StatusCode(statusCode, new { message });
     }
 }
