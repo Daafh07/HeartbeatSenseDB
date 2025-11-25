@@ -25,16 +25,21 @@ public class User : BaseModel
     public string LastName { get; set; } = default!;
  
     [Column("email")]
-
     public string Email { get; set; } = default!;
  
-
     [Column("password")]
-
     public string Password { get; set; } = default!;
+
+    [Column("number")]
+    public long PhoneNumber { get; set; }
+
+    [Column("gender")]
+    public string Gender { get; set; } = default!;
+
+    [Column("age")]
+    public int Age { get; set; }
  
     [Column("created_at")]
-
     public DateTime CreatedAt { get; set; }
 
 }
