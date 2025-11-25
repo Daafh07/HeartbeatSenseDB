@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace HeartbeatBackend.Models;
  
@@ -21,8 +22,9 @@ public class RegisterRequest
     public string Password { get; set; } = string.Empty;
 
     [Required]
-    [Range(10000000, long.MaxValue, ErrorMessage = "Phone number must be numeric.")]
-    public long PhoneNumber { get; set; }
+    [Range(10000000, long.MaxValue, ErrorMessage = "Number must be numeric.")]
+    [JsonPropertyName("number")]
+    public long Number { get; set; }
 
     [Required]
     [MaxLength(20)]

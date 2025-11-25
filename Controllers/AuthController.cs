@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
                 FirstName = userInfo.FirstName,
                 LastName = userInfo.LastName,
                 Email = userInfo.Email,
-                PhoneNumber = userInfo.PhoneNumber,
+                Number = userInfo.Number,
                 Gender = userInfo.Gender,
                 Age = userInfo.Age,
                 Password = BCrypt.Net.BCrypt.HashPassword(userInfo.Password),
