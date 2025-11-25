@@ -56,7 +56,7 @@ public class AuthController : ControllerBase
  
             await _client.From<User>().Insert(newUser);
  
-            return Ok(new { message = "User created successfully." });
+            return Ok(BuildAuthPayload(newUser));
         }
         catch (PostgrestException ex)
         {
@@ -91,26 +91,7 @@ public class AuthController : ControllerBase
                 !BCrypt.Net.BCrypt.Verify(loginData.Password, user.Password))
                 return Unauthorized(new { message = "Invalid credentials." });
  
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtSecret);
- 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("id", user.Id.ToString()),
-                    new Claim("email", user.Email)
-                }),
-                Expires = DateTime.UtcNow.AddHours(12),
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256Signature)
-            };
- 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var jwt = tokenHandler.WriteToken(token);
- 
-            return Ok(new { token = jwt });
+            return Ok(BuildAuthPayload(user));
         }
         catch (PostgrestException ex)
         {
@@ -135,5 +116,40 @@ public class AuthController : ControllerBase
         _logger.LogError(exception, "Supabase/PostgREST error: {Message}", message);
 
         return StatusCode(statusCode, new { message });
+    }
+
+    private object BuildAuthPayload(User user)
+    {
+        var jwt = GenerateJwt(user);
+
+        return new
+        {
+            token = jwt,
+            firstName = user.FirstName,
+            lastName = user.LastName,
+            email = user.Email
+        };
+    }
+
+    private string GenerateJwt(User user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_jwtSecret);
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("id", user.Id.ToString()),
+                new Claim("email", user.Email)
+            }),
+            Expires = DateTime.UtcNow.AddHours(12),
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 }
