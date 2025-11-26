@@ -1,4 +1,5 @@
 using HeartbeatBackend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Supabase;
@@ -101,6 +102,44 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Unexpected error while logging in user {Email}", loginData.Email);
             return StatusCode(500, new { message = "Unexpected error while logging in." });
+        }
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> CurrentUser()
+    {
+        try
+        {
+            var userIdValue = User.FindFirstValue("id");
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized(new { message = "Invalid token." });
+
+            var response = await _client
+                .From<User>()
+                .Where(u => u.Id == userId)
+                .Get();
+
+            var user = response.Models.FirstOrDefault();
+            if (user == null)
+                return Unauthorized(new { message = "Account no longer exists." });
+
+            return Ok(new
+            {
+                token = GenerateJwt(user),
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                email = user.Email
+            });
+        }
+        catch (PostgrestException ex)
+        {
+            return HandleSupabaseException(ex, "Unable to fetch current user.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while fetching current user.");
+            return StatusCode(500, new { message = "Unexpected error while fetching current user." });
         }
     }
 
