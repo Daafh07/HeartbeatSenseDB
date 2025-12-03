@@ -82,6 +82,8 @@ builder.Services
 
         return new Client(supabaseUrl, supabaseKey, supabaseOptions);
     })
+    // Register controllers that are used as services (UsersController depends on AuthController)
+    .AddScoped<HeartbeatBackend.Controllers.AuthController>()
     .AddControllers();
  
 builder.Services.AddAuthentication(options =>
