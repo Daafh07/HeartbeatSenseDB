@@ -10,8 +10,8 @@ public class UpdateProfileRequest
     [MaxLength(100)]
     public string? LastName { get; set; }
 
-    [Range(10000000, long.MaxValue, ErrorMessage = "Number must be numeric.")]
-    public long? Number { get; set; }
+    [RegularExpression(@"^\d+$", ErrorMessage = "Number must be numeric.")]
+    public string? Number { get; set; }
 
     [MaxLength(20)]
     public string? Gender { get; set; }

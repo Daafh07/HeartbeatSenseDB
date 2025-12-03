@@ -53,7 +53,7 @@ public class UsersController : ControllerBase
 
             if (request.FirstName != null) user.FirstName = request.FirstName;
             if (request.LastName != null) user.LastName = request.LastName;
-            if (request.Number.HasValue) user.Number = request.Number.Value;
+            if (request.Number != null) user.Number = request.Number;
             if (request.Gender != null) user.Gender = request.Gender;
             if (request.Age.HasValue) user.Age = request.Age.Value;
             if (request.Height.HasValue) user.Height = request.Height;

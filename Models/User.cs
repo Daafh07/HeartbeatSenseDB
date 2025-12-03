@@ -31,7 +31,7 @@ public class User : BaseModel
     public string Password { get; set; } = default!;
 
     [Column("number")]
-    public long Number { get; set; }
+    public string Number { get; set; } = string.Empty;
 
     [Column("gender")]
     public string Gender { get; set; } = default!;

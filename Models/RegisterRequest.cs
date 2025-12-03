@@ -22,9 +22,9 @@ public class RegisterRequest
     public string Password { get; set; } = string.Empty;
 
     [Required]
-    [Range(10000000, long.MaxValue, ErrorMessage = "Number must be numeric.")]
+    [RegularExpression(@"^\d+$", ErrorMessage = "Number must be numeric.")]
     [JsonPropertyName("number")]
-    public long Number { get; set; }
+    public string Number { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(20)]
