@@ -36,8 +36,8 @@ public class User : BaseModel
     [Column("gender")]
     public string Gender { get; set; } = default!;
 
-    [Column("age")]
-    public int Age { get; set; }
+    [Column("date_of_birth")]
+    public DateTime DateOfBirth { get; set; }
 
     [Column("height")]
     public decimal? Height { get; set; }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace HeartbeatBackend.Models;
 
@@ -16,8 +17,8 @@ public class UpdateProfileRequest
     [MaxLength(20)]
     public string? Gender { get; set; }
 
-    [Range(1, 120)]
-    public int? Age { get; set; }
+    [JsonPropertyName("dateOfBirth")]
+    public DateTime? DateOfBirth { get; set; }
 
     public decimal? Height { get; set; }
 

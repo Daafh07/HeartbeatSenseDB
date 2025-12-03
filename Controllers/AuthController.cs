@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
                 Email = userInfo.Email,
                 Number = userInfo.Number,
                 Gender = userInfo.Gender,
-                Age = userInfo.Age,
+                DateOfBirth = userInfo.DateOfBirth.Date,
                 Password = BCrypt.Net.BCrypt.HashPassword(userInfo.Password),
                 CreatedAt = DateTime.UtcNow
             };
@@ -164,7 +164,7 @@ public class AuthController : ControllerBase
             email = user.Email,
             number = user.Number,
             gender = user.Gender,
-            age = user.Age,
+            dateOfBirth = user.DateOfBirth,
             height = user.Height,
             weight = user.Weight,
             bloodType = user.BloodType,

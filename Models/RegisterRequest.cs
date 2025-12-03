@@ -31,6 +31,6 @@ public class RegisterRequest
     public string Gender { get; set; } = string.Empty;
 
     [Required]
-    [Range(1, 120)]
-    public int Age { get; set; }
+    [JsonPropertyName("dateOfBirth")]
+    public DateTime DateOfBirth { get; set; }
 }

@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
             return BadRequest(ModelState);
 
         if (request.FirstName == null && request.LastName == null && request.Number == null &&
-            request.Gender == null && request.Age == null && request.Height == null &&
+            request.Gender == null && request.DateOfBirth == null && request.Height == null &&
             request.Weight == null && request.BloodType == null)
         {
             return BadRequest(new { message = "No fields to update." });
@@ -55,7 +55,7 @@ public class UsersController : ControllerBase
             if (request.LastName != null) user.LastName = request.LastName;
             if (request.Number != null) user.Number = request.Number;
             if (request.Gender != null) user.Gender = request.Gender;
-            if (request.Age.HasValue) user.Age = request.Age.Value;
+            if (request.DateOfBirth.HasValue) user.DateOfBirth = request.DateOfBirth.Value.Date;
             if (request.Height.HasValue) user.Height = request.Height;
             if (request.Weight.HasValue) user.Weight = request.Weight;
             if (request.BloodType != null) user.BloodType = request.BloodType;
@@ -80,9 +80,10 @@ public class UsersController : ControllerBase
 
     private IActionResult HandleSupabaseException(PostgrestException exception, string fallbackMessage)
     {
+        // Default to 400 for unknown Postgrest errors to avoid leaking as 500 when input is invalid
         var statusCode = exception.StatusCode > 0
             ? exception.StatusCode
-            : (int)System.Net.HttpStatusCode.InternalServerError;
+            : StatusCodes.Status400BadRequest;
         var message = !string.IsNullOrWhiteSpace(exception.Content)
             ? exception.Content
             : fallbackMessage;
