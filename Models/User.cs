@@ -38,6 +38,15 @@ public class User : BaseModel
 
     [Column("age")]
     public int Age { get; set; }
+
+    [Column("height")]
+    public decimal? Height { get; set; }
+
+    [Column("weight")]
+    public decimal? Weight { get; set; }
+
+    [Column("blood_type")]
+    public string? BloodType { get; set; }
  
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
