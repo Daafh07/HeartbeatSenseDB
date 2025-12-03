@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HeartbeatBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8809016d124c4960cdf25d4c2b82da252c31a8c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e749071f483ba1e7c382b1315e935bd049f821e6")]
 [assembly: System.Reflection.AssemblyProductAttribute("HeartbeatBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HeartbeatBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
