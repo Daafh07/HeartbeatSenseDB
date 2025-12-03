@@ -18,7 +18,7 @@ public class UpdateProfileRequest
     public string? Gender { get; set; }
 
     [JsonPropertyName("dateOfBirth")]
-    public DateTime? DateOfBirth { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
 
     public decimal? Height { get; set; }
 

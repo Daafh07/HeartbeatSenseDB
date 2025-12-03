@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
                 Email = userInfo.Email,
                 Number = userInfo.Number,
                 Gender = userInfo.Gender,
-                DateOfBirth = userInfo.DateOfBirth.Date,
+                DateOfBirth = userInfo.DateOfBirth,
                 Password = BCrypt.Net.BCrypt.HashPassword(userInfo.Password),
                 CreatedAt = DateTime.UtcNow
             };
@@ -92,7 +92,19 @@ public class AuthController : ControllerBase
                 !BCrypt.Net.BCrypt.Verify(loginData.Password, user.Password))
                 return Unauthorized(new { message = "Invalid credentials." });
  
-            return Ok(await BuildAuthPayload(user));
+            try
+            {
+                return Ok(await BuildAuthPayload(user));
+            }
+            catch (PostgrestException ex)
+            {
+                return HandleSupabaseException(ex, "Unable to build user payload.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while building user payload for {Email}", loginData.Email);
+                return StatusCode(500, new { message = "Unexpected error while building user payload." });
+            }
         }
         catch (PostgrestException ex)
         {
@@ -124,7 +136,19 @@ public class AuthController : ControllerBase
             if (user == null)
                 return Unauthorized(new { message = "Account no longer exists." });
 
-            return Ok(await BuildAuthPayload(user));
+            try
+            {
+                return Ok(await BuildAuthPayload(user));
+            }
+            catch (PostgrestException ex)
+            {
+                return HandleSupabaseException(ex, "Unable to fetch current user.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while building current user payload.");
+                return StatusCode(500, new { message = "Unexpected error while building current user payload." });
+            }
         }
         catch (PostgrestException ex)
         {
@@ -165,7 +189,7 @@ public class AuthController : ControllerBase
             email = user.Email,
             number = user.Number,
             gender = user.Gender,
-            dateOfBirth = user.DateOfBirth,
+            dateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd"),
             height = user.Height,
             weight = user.Weight,
             bloodType = user.BloodType,

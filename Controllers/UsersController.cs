@@ -56,7 +56,7 @@ public class UsersController : ControllerBase
             if (request.LastName != null) user.LastName = request.LastName;
             if (request.Number != null) user.Number = request.Number;
             if (request.Gender != null) user.Gender = request.Gender;
-            if (request.DateOfBirth.HasValue) user.DateOfBirth = request.DateOfBirth.Value.Date;
+            if (request.DateOfBirth.HasValue) user.DateOfBirth = request.DateOfBirth.Value;
             if (request.Height.HasValue) user.Height = request.Height;
             if (request.Weight.HasValue) user.Weight = request.Weight;
             if (request.BloodType != null) user.BloodType = request.BloodType;
@@ -67,10 +67,20 @@ public class UsersController : ControllerBase
                 .Where(u => u.Id == userId)
                 .Update(user);
 
-            // Reuse auth payload to return fresh user snapshot
-            return await _authController.BuildAuthPayload(user) is object payload
-                ? Ok(payload)
-                : StatusCode(500, new { message = "Failed to build response." });
+            try
+            {
+                var payload = await _authController.BuildAuthPayload(user);
+                return Ok(payload);
+            }
+            catch (PostgrestException ex)
+            {
+                return HandleSupabaseException(ex, "Unable to build user payload.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while building user payload after update.");
+                return StatusCode(500, new { message = "Unexpected error while building user payload." });
+            }
         }
         catch (PostgrestException ex)
         {
@@ -96,4 +106,5 @@ public class UsersController : ControllerBase
 
         return StatusCode(statusCode, new { message });
     }
+
 }

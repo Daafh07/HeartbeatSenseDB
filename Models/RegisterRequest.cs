@@ -32,5 +32,5 @@ public class RegisterRequest
 
     [Required]
     [JsonPropertyName("dateOfBirth")]
-    public DateTime DateOfBirth { get; set; }
+    public DateOnly DateOfBirth { get; set; }
 }
