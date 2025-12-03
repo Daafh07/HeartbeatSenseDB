@@ -139,7 +139,6 @@ public class AuthController : ControllerBase
 
     private IActionResult HandleSupabaseException(PostgrestException exception, string fallbackMessage)
     {
-        // Default to 400 for unknown PostgREST errors so invalid input does not bubble up as 500
         var statusCode = exception.StatusCode > 0
             ? exception.StatusCode
             : StatusCodes.Status400BadRequest;
@@ -152,7 +151,8 @@ public class AuthController : ControllerBase
         return StatusCode(statusCode, new { message });
     }
 
-    internal async Task<object> BuildAuthPayload(User user)
+    // CHANGED: Made this method public so it can be called from UsersController
+    public async Task<object> BuildAuthPayload(User user)
     {
         var jwt = GenerateJwt(user);
         var latest = await GetLatestMeasurement(user.Id);
@@ -204,7 +204,6 @@ public class AuthController : ControllerBase
 
     private async Task<Measurement?> GetLatestMeasurement(Guid userId)
     {
-        // Fetch devices for user
         var devicesResponse = await _client
             .From<Device>()
             .Where(d => d.UserId == userId)

@@ -51,6 +51,7 @@ public class UsersController : ControllerBase
             if (user == null)
                 return Unauthorized(new { message = "Account no longer exists." });
 
+            // Update fields
             if (request.FirstName != null) user.FirstName = request.FirstName;
             if (request.LastName != null) user.LastName = request.LastName;
             if (request.Number != null) user.Number = request.Number;
@@ -60,9 +61,13 @@ public class UsersController : ControllerBase
             if (request.Weight.HasValue) user.Weight = request.Weight;
             if (request.BloodType != null) user.BloodType = request.BloodType;
 
-            await _client.From<User>().Update(user);
+            // FIX: Use Where clause before Update
+            await _client
+                .From<User>()
+                .Where(u => u.Id == userId)
+                .Update(user);
 
-            // Reuse auth payload to return fresh user snapshot (incl. latest measurement and new token)
+            // Reuse auth payload to return fresh user snapshot
             return await _authController.BuildAuthPayload(user) is object payload
                 ? Ok(payload)
                 : StatusCode(500, new { message = "Failed to build response." });
@@ -80,7 +85,6 @@ public class UsersController : ControllerBase
 
     private IActionResult HandleSupabaseException(PostgrestException exception, string fallbackMessage)
     {
-        // Default to 400 for unknown Postgrest errors to avoid leaking as 500 when input is invalid
         var statusCode = exception.StatusCode > 0
             ? exception.StatusCode
             : StatusCodes.Status400BadRequest;
