@@ -139,9 +139,10 @@ public class AuthController : ControllerBase
 
     private IActionResult HandleSupabaseException(PostgrestException exception, string fallbackMessage)
     {
+        // Default to 400 for unknown PostgREST errors so invalid input does not bubble up as 500
         var statusCode = exception.StatusCode > 0
             ? exception.StatusCode
-            : (int)HttpStatusCode.InternalServerError;
+            : StatusCodes.Status400BadRequest;
         var message = !string.IsNullOrWhiteSpace(exception.Content)
             ? exception.Content
             : fallbackMessage;
