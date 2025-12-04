@@ -72,7 +72,8 @@ public class MeasurementsController : ControllerBase
                 {
                     value = m.Value,
                     deviceId = m.DeviceId,
-                    createdAt = m.CreatedAt
+                    createdAt = m.CreatedAt,
+                    activityId = m.ActivityId
                 })
                 .ToList();
 
@@ -86,6 +87,70 @@ public class MeasurementsController : ControllerBase
         {
             _logger.LogError(ex, "Unexpected error while fetching measurements.");
             return StatusCode(500, new { message = "Unexpected error while fetching measurements." });
+        }
+    }
+
+    [Authorize]
+    [HttpPut("{id:guid}/activity")]
+    public async Task<IActionResult> AttachActivity(Guid id, [FromBody] long activityId)
+    {
+        try
+        {
+            var userIdValue = User.FindFirstValue("id");
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized(new { message = "Invalid token." });
+
+            var devicesResponse = await _client
+                .From<Device>()
+                .Where(d => d.UserId == userId)
+                .Get();
+
+            var deviceIds = devicesResponse.Models.Select(d => d.Id).ToHashSet();
+            if (deviceIds.Count == 0)
+                return NotFound(new { message = "No devices for this user." });
+
+            var measurementResponse = await _client
+                .From<Measurement>()
+                .Where(m => m.Id == id)
+                .Get();
+
+            var measurement = measurementResponse.Models.FirstOrDefault();
+            if (measurement == null || measurement.DeviceId == null || !deviceIds.Contains(measurement.DeviceId))
+                return NotFound(new { message = "Measurement not found for this user." });
+
+            var activityResponse = await _client
+                .From<Activity>()
+                .Where(a => a.Id == activityId)
+                .Get();
+
+            var activity = activityResponse.Models.FirstOrDefault();
+            if (activity == null)
+                return NotFound(new { message = "Activity not found." });
+
+            measurement.ActivityId = activityId;
+
+            await _client
+                .From<Measurement>()
+                .Where(m => m.Id == measurement.Id)
+                .Update(measurement);
+
+            return Ok(new
+            {
+                id = measurement.Id,
+                value = measurement.Value,
+                deviceId = measurement.DeviceId,
+                createdAt = measurement.CreatedAt,
+                activityId = measurement.ActivityId
+            });
+        }
+        catch (PostgrestException ex)
+        {
+            return HandleSupabaseException(ex, "Unable to attach activity to measurement.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while attaching activity to measurement {Id}", id);
+            return StatusCode(500, new { message = "Unexpected error while attaching activity to measurement." });
         }
     }
 

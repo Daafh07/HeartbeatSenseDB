@@ -18,4 +18,8 @@ public class Measurement : BaseModel
 
     [Column("device_id")]
     public string? DeviceId { get; set; }
+
+    // Optional link to an activity (if the DB has an activity_id column)
+    [Column("activity_id")]
+    public long? ActivityId { get; set; }
 }
