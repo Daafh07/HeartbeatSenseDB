@@ -6,9 +6,9 @@ namespace HeartbeatBackend.Models;
 [Table("activities")]
 public class Activity : BaseModel
 {
-    [PrimaryKey("id", false)]
+    [PrimaryKey("id", true)]
     [Column("id")]
-    public long Id { get; set; }
+    public long? Id { get; set; }
 
     [Column("title")]
     public string Title { get; set; } = string.Empty;
