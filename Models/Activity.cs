@@ -20,6 +20,9 @@ public long? Id { get; set; }
     [Column("description")]
     public string Description { get; set; } = string.Empty;
 
-[Column("created_at", NullValueHandling.Ignore, true, true)]
-public DateTime CreatedAt { get; set; }
+    [Column("user_id")]
+    public Guid? UserId { get; set; }
+
+    [Column("created_at", NullValueHandling.Ignore, true, true)]
+    public DateTime CreatedAt { get; set; }
 }

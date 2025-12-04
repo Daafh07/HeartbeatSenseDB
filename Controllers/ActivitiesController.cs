@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Supabase;
 using Supabase.Postgrest.Exceptions;
 using System.Net;
+using System.Security.Claims;
 
 namespace HeartbeatBackend.Controllers;
 
@@ -26,8 +27,13 @@ public class ActivitiesController : ControllerBase
     {
         try
         {
+            var userIdValue = User.FindFirstValue("id");
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized(new { message = "Invalid token." });
+
             var response = await _client
                 .From<Activity>()
+                .Where(a => a.UserId == userId)
                 .Order(a => a.CreatedAt, Supabase.Postgrest.Constants.Ordering.Descending)
                 .Get();
 
@@ -60,11 +66,16 @@ public class ActivitiesController : ControllerBase
 
         try
         {
+            var userIdValue = User.FindFirstValue("id");
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized(new { message = "Invalid token." });
+
             var newActivity = new Activity
             {
                 Title = request.Title,
                 Type = request.Type,
-                Description = request.Description
+                Description = request.Description,
+                UserId = userId
             };
 
             var response = await _client.From<Activity>().Insert(newActivity);
@@ -99,9 +110,14 @@ public class ActivitiesController : ControllerBase
 
         try
         {
+            var userIdValue = User.FindFirstValue("id");
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized(new { message = "Invalid token." });
+
             var existing = await _client
                 .From<Activity>()
                 .Where(a => a.Id == id)
+                .Where(a => a.UserId == userId)
                 .Get();
 
             var activity = existing.Models.FirstOrDefault();

@@ -70,6 +70,7 @@ public class MeasurementsController : ControllerBase
                 .Take(cappedLimit)
                 .Select(m => new
                 {
+                    id = m.Id,
                     value = m.Value,
                     deviceId = m.DeviceId,
                     createdAt = m.CreatedAt,
@@ -121,11 +122,12 @@ public class MeasurementsController : ControllerBase
             var activityResponse = await _client
                 .From<Activity>()
                 .Where(a => a.Id == activityId)
+                .Where(a => a.UserId == userId)
                 .Get();
 
             var activity = activityResponse.Models.FirstOrDefault();
             if (activity == null)
-                return NotFound(new { message = "Activity not found." });
+                return NotFound(new { message = "Activity not found for this user." });
 
             measurement.ActivityId = activityId;
 
